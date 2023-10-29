@@ -6,12 +6,12 @@
 
 #define MAX_NAME 256
 #define TABLE_SIZE 10
-#define DELETED_NODE (person*)(0xFFFFFFFFFFFFFFFFUL)
 
-typedef struct {
+typedef struct person{
     char name[MAX_NAME];
     int age;
     //...add stuff later, maybe
+    struct person *next;
 }person;
 
 person *hash_table[TABLE_SIZE];
@@ -52,12 +52,15 @@ void print_table()
         {
             printf("\t%i\t---\n", i);
         }
-        else if(hash_table[i] == DELETED_NODE)
-        {
-            printf("\t%i\t---<deleted>\n");
-        }
         else{
-            printf("\t%i\t%s\n", i, hash_table[i]->name);
+            printf("\t%i\t", i);
+            person *tmp = hash_table[i];
+            while (tmp != NULL)
+            {
+                printf("%s - ", tmp->name);
+                tmp = tmp->next;
+            }
+            printf("\n");
         }
     }
     printf("End\n");
@@ -69,19 +72,9 @@ bool hash_table_insert(person *p)
     if (p == NULL) return false;
 
     int index = hash(p->name);
-
-    //linear probing
-    for (int i = 0; i < TABLE_SIZE; i++)
-    {
-        int try = (i + index) % TABLE_SIZE;
-        //try find an open space in the table
-        if (hash_table[try] == NULL || hash_table[try] == DELETED_NODE)
-        {
-            hash_table[try] = p;
-            return true;
-        }
-    }
-    return false;
+    p->next = hash_table[index];
+    hash_table[index]= p;
+    return true;
     //check is the space is occupied
     /*if (hash_table[index] != NULL)
     {
@@ -96,61 +89,35 @@ bool hash_table_insert(person *p)
 person *hash_table_lookup(char *name)
 {
     int index = hash(name);
-    //linear probing
-    for (int i = 0; i < TABLE_SIZE; i++)
+    person *tmp = hash_table[index];
+    while (tmp != NULL && strncmp(tmp->name, name, MAX_NAME) != 0)
     {
-        int try = (index + i) % TABLE_SIZE;
-        if (hash_table[try] == NULL || hash_table[try] == DELETED_NODE)
-        {
-            return false; //not here
-        }
-        if (hash_table[try] == DELETED_NODE) continue;
-        if (strncmp(hash_table[try]->name, name, TABLE_SIZE) == 0)
-        {
-            return hash_table[try];
-        }
+        tmp = tmp->next;
     }
-    /*if (hash_table[index] != NULL && strncmp(hash_table[index]->name, name, TABLE_SIZE) == 0)
-    {
-        return hash_table[index];
-    }
-    else
-    {
-        return NULL;
-    }*/
-    return NULL;
+    return tmp;
 }
 
 //deleting a person
 person *hash_table_delete(char *name)
 {
     int index = hash(name);
-    //linear probing
-    for (int i = 0; i < TABLE_SIZE; i++)
+    person *tmp = hash_table[index];
+    person *prev = NULL;
+    while (tmp != NULL && strncmp(tmp->name, name, MAX_NAME) != 0)
     {
-        int try = (index + i) % TABLE_SIZE;
-        if (hash_table[try] == NULL) return NULL;
-        if (hash_table[try] == DELETED_NODE) continue;
-        if (strncmp(hash_table[try]->name, name, TABLE_SIZE) == 0)
-        {
-            person *tmp = hash_table[try];
-            hash_table[try] = DELETED_NODE;
-            return tmp;
-        }
+        prev = tmp;
+        tmp = tmp->next;
     }
-    /*if (hash_table[index] != NULL && strncmp(hash_table[index]->name, name, TABLE_SIZE) == 0)
+    if (tmp == NULL) return NULL;
+    if (prev == NULL)
     {
-        //make a copy of the pointer
-        person *tmp = hash_table[index];
-        hash_table[index] = NULL;
-
-        printf("deleted\n");
-        return tmp;
+        //deleting the head
+        hash_table[index] = tmp->next;
     }
     else{
-        printf("Not\n");
-        return NULL;
-    }*/
+        prev->next = tmp->next;
+    }
+    return tmp;
 }
 
 int main()
