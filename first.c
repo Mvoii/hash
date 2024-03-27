@@ -54,7 +54,7 @@ void print_table()
         }
         else if(hash_table[i] == DELETED_NODE)
         {
-            printf("\t%i\t---<deleted>\n");
+            printf("\t%i\t---<deleted>\n", i);
         }
         else{
             printf("\t%i\t%s\n", i, hash_table[i]->name);
